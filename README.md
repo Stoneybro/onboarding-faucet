@@ -1,66 +1,75 @@
-## Foundry
+# Minimal Faucet
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A simple faucet contract that allows one-time claims per address. Supports ERC20 tokens and ETH. Owner can pause the contract, reset claims, update drip amount, and withdraw funds.
 
-Foundry consists of:
+---
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Summary
 
-## Documentation
+* Contract: `MinimalFaucet.sol`
+* Solidity: `^0.8.19`
+* License: `MIT`
+* Dependencies: OpenZeppelin `IERC20`, `SafeERC20`, `Ownable`, `ReentrancyGuard`, `Pausable`
 
-https://book.getfoundry.sh/
+Purpose: provide a fixed `dripAmount` to each account exactly once. Suitable for testnets or onboarding flows.
 
-## Usage
+---
 
-### Build
+## High-level behavior
 
-```shell
-$ forge build
+* `claim()` — ERC20 claim. One-time per address.
+* `claimETH()` — ETH claim. One-time per address.
+* `hasClaimed` mapping prevents repeated claims.
+* Owner can update token, drip size, pause/unpause, reset claims, and withdraw funds.
+* Contract can receive ETH.
+
+---
+
+## Constructor
+
+```solidity
+constructor(address _token, uint256 _dripAmount) Ownable(msg.sender) {
+    token = IERC20(_token);
+    dripAmount = _dripAmount;
+}
 ```
 
-### Test
+* Passing `address(0)` disables ERC20 claims.
+* `dripAmount` is in token units or wei for ETH.
 
-```shell
-$ forge test
+---
+
+## Deployment example (ethers.js)
+
+```js
+const MinimalFaucet = await ethers.getContractFactory('MinimalFaucet');
+const faucet = await MinimalFaucet.deploy(tokenAddress, dripAmount);
+await faucet.deployed();
+
+await faucet.claim(); // user
+await faucet.updateDripAmount(newAmount); // owner
+await faucet.withdrawERC20(tokenAddress, ownerAddr, amount); // owner
 ```
 
-### Format
+---
 
-```shell
-$ forge fmt
-```
+## Testing checklist
 
-### Gas Snapshots
+* ERC20 claim success and duplicate prevention.
+* ETH claim success and failure paths.
+* Owner resetClaim allows re-claim.
+* Pause/unpause behavior.
+* Withdraw flows.
 
-```shell
-$ forge snapshot
-```
+---
 
-### Anvil
+## Notes
 
-```shell
-$ anvil
-```
+* Simple, one-time claim design suitable for small-scale distributions.
+* For large distributions consider Merkle airdrops to reduce storage costs.
 
-### Deploy
+---
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+## License
 
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+MIT
