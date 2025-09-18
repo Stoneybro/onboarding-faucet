@@ -2,5 +2,9 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+mappings =[
+    {src = "lib/openzeppelin-contracts/contracts", dst = "openzeppelin"},
+    {src = "lib/forge-std/src", dst = "forge-std"}
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
